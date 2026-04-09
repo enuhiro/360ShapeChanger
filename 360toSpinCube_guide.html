@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>360 to Spin Cube — 使い方ガイド</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+  :root{--bg:#0a0a0f;--surface:#12121a;--border:#2a2a3a;--accent:#c8ff5a;--accent2:#5af0ff;--text:#e8e8f0;--muted:#666680;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;line-height:1.8;padding-bottom:60px;}
+  header{padding:28px 24px 20px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,rgba(200,255,90,.05) 0%,transparent 60%);}
+  .logo{font-family:'Space Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;}
+  h1{font-size:24px;font-weight:700;margin-bottom:6px;}
+  .subtitle{font-size:13px;color:var(--muted);font-weight:300;}
+  nav{position:sticky;top:0;z-index:10;background:rgba(10,10,15,.95);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;gap:6px;flex-wrap:wrap;backdrop-filter:blur(10px);}
+  nav a{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:5px 10px;border:1px solid var(--border);border-radius:20px;transition:all .2s;white-space:nowrap;}
+  nav a:hover{border-color:var(--accent2);color:var(--accent2);}
+  main{max-width:720px;margin:0 auto;padding:32px 20px;}
+  section{margin-bottom:48px;}
+  .section-num{font-family:'Space Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;}
+  h2{font-size:18px;font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+  h3{font-size:14px;font-weight:500;color:var(--accent2);margin:20px 0 8px;}
+  p{font-size:13px;color:#c0c0d0;margin-bottom:12px;}
+  .steps{display:flex;flex-direction:column;gap:12px;}
+  .step{display:flex;gap:14px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;}
+  .step-num{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--accent);background:rgba(200,255,90,.1);border:1px solid rgba(200,255,90,.3);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .step-title{font-size:13px;font-weight:500;margin-bottom:4px;}
+  .step-desc{font-size:12px;color:var(--muted);line-height:1.7;}
+  .param-list{display:flex;flex-direction:column;gap:8px;}
+  .param{display:grid;grid-template-columns:150px 1fr;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 12px;align-items:start;}
+  .param-name{font-family:'Space Mono',monospace;font-size:10px;color:var(--accent2);}
+  .param-desc{font-size:12px;color:var(--muted);line-height:1.6;}
+  .notice{background:rgba(200,255,90,.06);border:1px solid rgba(200,255,90,.25);border-radius:8px;padding:14px 16px;margin:16px 0;}
+  .notice-title{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px;}
+  .notice p{font-size:12px;color:#b0c070;margin-bottom:0;}
+  .notice-blue{background:rgba(90,240,255,.06);border:1px solid rgba(90,240,255,.25);border-radius:8px;padding:14px 16px;margin:16px 0;}
+  .notice-blue .notice-title{color:var(--accent2);}
+  .notice-blue p{color:#90d0e0;}
+  .mode-table{width:100%;border-collapse:collapse;font-size:12px;margin:12px 0;}
+  .mode-table th{background:var(--surface);padding:8px 12px;text-align:left;font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);border-bottom:1px solid var(--border);}
+  .mode-table td{padding:8px 12px;border-bottom:1px solid var(--border);color:#c0c0d0;vertical-align:top;}
+  .mode-table tr:last-child td{border-bottom:none;}
+  .tag{display:inline-block;font-family:'Space Mono',monospace;font-size:9px;padding:2px 8px;border-radius:20px;border:1px solid;margin-right:4px;vertical-align:middle;}
+  .tag-green{border-color:rgba(200,255,90,.4);color:var(--accent);background:rgba(200,255,90,.08);}
+  .tag-blue{border-color:rgba(90,240,255,.4);color:var(--accent2);background:rgba(90,240,255,.08);}
+  .tag-red{border-color:rgba(255,100,100,.4);color:#ff8080;background:rgba(255,100,100,.08);}
+  .flow{display:flex;flex-direction:column;gap:4px;margin:16px 0;}
+  .flow-item{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-size:12px;display:flex;align-items:center;gap:10px;}
+  .flow-icon{font-size:16px;flex-shrink:0;}
+  .flow-arrow{text-align:center;color:var(--muted);font-size:16px;padding:0 4px;}
+  footer{text-align:center;padding:32px 20px;font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">360 to Spin Cube — User Guide</div>
+  <h1>使い方ガイド</h1>
+  <div class="subtitle">360°写真を回転アニメーションに変換するツール</div>
+</header>
+
+<nav>
+  <a href="#start">はじめに</a>
+  <a href="#basic">基本の流れ</a>
+  <a href="#settings">各種設定</a>
+  <a href="#modes">回転モード</a>
+  <a href="#output">出力方法</a>
+  <a href="#tips">Tips</a>
+  <a href="#license">利用規約</a>
+</nav>
+
+<main>
+
+  <section id="start">
+    <div class="section-num">00 — Overview</div>
+    <h2>このツールについて</h2>
+    <p>360°カメラで撮影した写真（エクイレクタングラー）を立方体に投影し、回転するアニメーション素材として出力するツールです。</p>
+    <div class="flow">
+      <div class="flow-item"><span class="flow-icon">🌐</span>360°写真を読み込む</div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-item"><span class="flow-icon">🔄</span>回転モード・視点・箱の設定を調整</div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-item"><span class="flow-icon">▶</span>回転再生でプレビュー確認</div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-item"><span class="flow-icon">🎬</span>GIF・連番画像・スクリーン録画で出力</div>
+    </div>
+    <div class="notice-blue">
+      <div class="notice-title">📱 iPhone / iOS をお使いの方へ</div>
+      <p>GIF・連番画像は「新タブで開く」ボタンを押し、表示された画像を<strong>長押し → 「写真に追加」</strong>で保存できます。スクリーン録画はiOS標準のスクリーン録画機能を使用してください。</p>
+    </div>
+  </section>
+
+  <section id="basic">
+    <div class="section-num">01 — Basic</div>
+    <h2>基本の使い方</h2>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div>
+        <div class="step-title">360°写真を読み込む</div>
+        <div class="step-desc">右パネルの「📂 ドロップ or クリック」エリアをタップして360°写真を選択します。読み込むと自動でプレビューが表示されます。</div>
+      </div></div>
+      <div class="step"><div class="step-num">2</div><div>
+        <div class="step-title">回転モードと設定を調整する</div>
+        <div class="step-desc">左パネルで回転モード・視点・背景などを設定します。「▶ 回転再生」で動きをリアルタイムに確認できます。</div>
+      </div></div>
+      <div class="step"><div class="step-num">3</div><div>
+        <div class="step-title">出力方法を選んで保存する</div>
+        <div class="step-desc">📱スクリーン録画・🎞GIF生成・🖼連番画像生成の3種類から選べます。それぞれ用途が異なります（詳しくは「出力方法」参照）。</div>
+      </div></div>
+    </div>
+  </section>
+
+  <section id="settings">
+    <div class="section-num">02 — Settings</div>
+    <h2>各種設定</h2>
+
+    <h3>📐 視点</h3>
+    <div class="param-list">
+      <div class="param"><div class="param-name">水平回転 Yaw</div><div class="param-desc">360°写真のどの方角を正面にするかを設定します。</div></div>
+      <div class="param"><div class="param-name">垂直回転 Pitch</div><div class="param-desc">カメラが上下を向く角度。プラスで天井寄り、マイナスで地面寄りに。</div></div>
+      <div class="param"><div class="param-name">見下ろし角度</div><div class="param-desc">箱を上から見下ろす角度。数値が大きいほど真上からの視点になります。</div></div>
+    </div>
+
+    <h3>📦 箱の設定</h3>
+    <div class="param-list">
+      <div class="param"><div class="param-name">箱の水平回転</div><div class="param-desc">箱自体を水平方向に回転させます。アニメの回転軸の起点になります。</div></div>
+      <div class="param"><div class="param-name">箱の垂直回転</div><div class="param-desc">箱を前後に傾けます。底面・天面が見えるようになります。</div></div>
+      <div class="param"><div class="param-name">高さ比率</div><div class="param-desc">1.0で正立方体。2.0で縦長の直方体になります。</div></div>
+      <div class="param"><div class="param-name">視野の広さ</div><div class="param-desc">箱がどれくらいの大きさで画面に映るかを調整します。</div></div>
+    </div>
+
+    <h3>🔀 視点移動</h3>
+    <div class="param-list">
+      <div class="param"><div class="param-name">垂直移動</div><div class="param-desc">箱の位置を画面上下にずらします。</div></div>
+      <div class="param"><div class="param-name">水平移動</div><div class="param-desc">箱の位置を画面左右にずらします。</div></div>
+    </div>
+
+    <h3>🎨 背景</h3>
+    <div class="param-list">
+      <div class="param"><div class="param-name">🌫 ぼかし</div><div class="param-desc">読み込んだ360°写真をぼかして背景に。統一感のある仕上がりになります（デフォルト）。</div></div>
+      <div class="param"><div class="param-name">⬜ 白 / ⬛ 黒</div><div class="param-desc">シンプルな単色背景。</div></div>
+      <div class="param"><div class="param-name">透明</div><div class="param-desc">背景なし。連番画像をPNGで保存すると透過素材として使えます。</div></div>
+    </div>
+
+    <h3>⚙️ アニメ設定</h3>
+    <div class="param-list">
+      <div class="param"><div class="param-name">回転速度（fps）</div><div class="param-desc">プレビュー再生・スクリーン録画時の速度。数値が大きいほど速く回ります。</div></div>
+      <div class="param"><div class="param-name">フレーム数</div><div class="param-desc">GIF・連番画像として保存される枚数。12・24・36枚から選択。</div></div>
+      <div class="param"><div class="param-name">プレビュー解像度</div><div class="param-desc">リアルタイムプレビューの解像度。低いほど動作が速くなります。</div></div>
+      <div class="param"><div class="param-name">GIF解像度</div><div class="param-desc">GIF出力時の解像度。大きいほど高画質ですが生成に時間がかかります。</div></div>
+    </div>
+  </section>
+
+  <section id="modes">
+    <div class="section-num">03 — Rotation Modes</div>
+    <h2>回転モード一覧</h2>
+
+    <h3>回転系</h3>
+    <table class="mode-table">
+      <tr><th>モード</th><th>動き</th></tr>
+      <tr><td>水平回転</td><td>箱のtilt（水平回転）を1周。最もスタンダードな回転。</td></tr>
+      <tr><td>垂直回転</td><td>箱のvtilt（垂直回転）を1周。底面や天面も見せられる。</td></tr>
+      <tr><td>水平＋垂直</td><td>水平回転しながら垂直がsin波で±45°揺れる。</td></tr>
+      <tr><td>ランダム揺れ</td><td>水平回転しながら垂直がランダムな揺れ幅で動く。ボタンを押すたびにパターンが変わる。</td></tr>
+    </table>
+
+    <h3>視点移動系（すべて箱の水平回転と同時）</h3>
+    <p>「動き方」ボタンで<strong>一方通行</strong>（画面外→通過→消える）と<strong>往復</strong>（行って戻る）を切り替えられます。各ボタンを再押しすると方向が反転します。</p>
+    <table class="mode-table">
+      <tr><th>モード</th><th>動き</th></tr>
+      <tr><td>視点横</td><td>箱が横方向にスライドしながら回転。</td></tr>
+      <tr><td>視点縦</td><td>箱が縦方向にスライドしながら回転。</td></tr>
+      <tr><td>視点斜め</td><td>右上→左下・左下→右上・左上→右下・右下→左上の4方向をボタン押すたびにサイクル。</td></tr>
+      <tr><td>視点ランダム</td><td>視点が複数のsin波で不規則にふらふらしながら箱が回転。</td></tr>
+    </table>
+
+    <div class="notice">
+      <div class="notice-title">💡 一方通行モードのループについて</div>
+      <p>一方通行は始端・終端が画面外のため、GIFや連番画像でループ再生しても切れ目が見えません。</p>
+    </div>
+  </section>
+
+  <section id="output">
+    <div class="section-num">04 — Output</div>
+    <h2>出力方法</h2>
+
+    <h3><span class="tag tag-red">📱</span> スクリーン録画モード</h3>
+    <p>スマホ・PCのスクリーン録画機能を使って動画として保存する方法です。</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div><div class="step-title">スマホのスクリーン録画を先に開始する</div><div class="step-desc">iPhoneならコントロールセンターから録画ボタンを押します。</div></div></div>
+      <div class="step"><div class="step-num">2</div><div><div class="step-title">「📱 スクリーン録画」ボタンをタップ</div><div class="step-desc">注意モーダルが表示されます。内容を確認してください。</div></div></div>
+      <div class="step"><div class="step-num">3</div><div><div class="step-title">「全画面で再生開始」をタップ</div><div class="step-desc">UIが消えて立方体のループアニメが全画面表示されます。</div></div></div>
+      <div class="step"><div class="step-num">4</div><div><div class="step-title">数秒録画したらスクリーン録画を停止</div><div class="step-desc">MP4形式で保存されます。そのままInstagramやTikTokに投稿できます。</div></div></div>
+    </div>
+    <div class="notice-blue">
+      <div class="notice-title">このアプリからは動画ファイルの保存はできません</div>
+      <p>スクリーン録画モードはアプリ内で動画を生成するのではなく、スマホ側の録画機能を活用します。</p>
+    </div>
+
+    <h3><span class="tag tag-green">🎞</span> GIF生成</h3>
+    <p>アプリ内でGIFアニメを生成します。SNSへの投稿や埋め込みに便利です。</p>
+    <div class="param-list">
+      <div class="param"><div class="param-name">解像度</div><div class="param-desc">「GIF解像度」スライダーで設定。128〜512px。大きいほど高画質・生成時間が長い。</div></div>
+      <div class="param"><div class="param-name">フレーム数</div><div class="param-desc">12・24・36枚。24枚がバランスが良い。</div></div>
+      <div class="param"><div class="param-name">色数制限</div><div class="param-desc">GIFは256色制限のため、写真によっては画質が落ちることがあります。</div></div>
+    </div>
+    <p>生成完了後「🔗 GIFを新タブで開く」→ 長押し（iOS）または右クリック（PC）で保存。</p>
+
+    <h3><span class="tag tag-green">🖼</span> 連番画像生成</h3>
+    <p>全フレームをJPGまたはPNGの静止画として生成します。CapCut・プレミアプロなどで動画化できます。</p>
+    <div class="notice">
+      <div class="notice-title">動画化の目安</div>
+      <p>24枚 × 1枚あたり0.1秒 = 2.4秒のループ動画。CapCutで「写真から動画」を使うと簡単です。</p>
+    </div>
+  </section>
+
+  <section id="tips">
+    <div class="section-num">05 — Tips</div>
+    <h2>Tips</h2>
+
+    <h3>🎲 ランダムボタンを積極的に使う</h3>
+    <p>「🎲 ランダム」を押すたびに全パラメーターがランダムに変わります。「↩ 戻す」で気に入らなければ元に戻せます。</p>
+
+    <h3>GIF生成は低解像度で試す</h3>
+    <p>GIF解像度を128〜256pxにして動きを確認してから、本番は高解像度で生成するのが効率的です。</p>
+
+    <h3>方向ボタンの反転を活用する</h3>
+    <p>視点移動系のモードは同じボタンを押すたびに方向が反転します。斜めは4方向をサイクルします。</p>
+
+    <h3>スクリーン録画は再生速度（fps）で調整する</h3>
+    <p>fpsが低いほどゆっくりした動きになります。スクリーン録画前にプレビューで速度を確認してください。</p>
+  </section>
+
+  <section id="license">
+    <div class="section-num">06 — License</div>
+    <h2>利用規約 / License</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px;">本ツールはAIアシスタント（Claude / Anthropic）との協働により制作されました。</p>
+
+    <h3>✅ 自由に使えること</h3>
+    <div class="param-list">
+      <div class="param"><div class="param-name">個人・商用利用</div><div class="param-desc">個人・商用を問わず無償で利用できます。</div></div>
+      <div class="param"><div class="param-name">改変・再配布・販売</div><div class="param-desc">自由に改変・再配布・販売することができます。</div></div>
+    </div>
+
+    <h3>🤝 お願い（強制ではありません）</h3>
+    <div class="notice-blue">
+      <div class="notice-title">販売・商用利用の際のご連絡</div>
+      <p>販売・商用利用の際は Instagram（<strong>@h1r0k1_n</strong>）にご一報いただけると嬉しいです。対価は求めません。</p>
+    </div>
+
+    <h3>🐛 バグ・不具合について</h3>
+    <div class="notice">
+      <div class="notice-title">技術的な対応はできません</div>
+      <p>本ツールはAIとの協働で制作されており、制作者本人による技術的なバグ修正・サポート対応はできません。予告なく公開を終了する場合があります。ご了承ください。</p>
+    </div>
+
+    <h3>⚖️ 免責事項</h3>
+    <p>本ツールの利用によって生じたいかなる損害についても、制作者は責任を負いません。動作保証はありません。</p>
+
+    <div style="margin-top:24px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);line-height:2;">
+      © 2026 えぬひろ (N_hiro)<br>
+      Instagram: <a href="https://www.instagram.com/h1r0k1_n/" style="color:var(--accent2);text-decoration:none;">@h1r0k1_n</a><br>
+      Built with Claude (Anthropic)
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  360 to Spin Cube — User Guide &nbsp;|&nbsp; © 2026 えぬひろ (N_hiro) &nbsp;|&nbsp; Built with Claude (Anthropic)
+</footer>
+</body>
+</html>
