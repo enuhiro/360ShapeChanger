@@ -203,6 +203,20 @@
 
 <script>
 'use strict';
+// body全体をドロップゾーンに（どこにドロップしても読み込める）
+document.addEventListener('dragover',e=>{
+  e.preventDefault();
+  document.body.style.outline='2px solid var(--accent)';
+});
+document.addEventListener('dragleave',e=>{
+  if(!e.relatedTarget)document.body.style.outline='';
+});
+document.addEventListener('drop',e=>{
+  e.preventDefault();
+  document.body.style.outline='';
+  const files=e.dataTransfer?e.dataTransfer.files:null;
+  if(files&&files[0])loadFile(files[0]);
+});
 let srcCanvas=null,currentFmt='jpg',bgType='blur';
 const FLOATS=['hr','aperture','vshift','hshift'];
 const DEFAULTS={yaw:0,pitch:0,elev:30,tilt:45,vtilt:0,vshift:0,hshift:0,hr:1.00,aperture:0.80,res:1024};
@@ -349,9 +363,16 @@ function syncUR(){
 // ---- ファイル読み込み ----
 const dropZone=document.getElementById('dropZone'),fileInput=document.getElementById('fileInput');
 dropZone.addEventListener('click',()=>fileInput.click());
-dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.style.borderColor='var(--accent)';});
-dropZone.addEventListener('dragleave',()=>{dropZone.style.borderColor='';});
-dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.style.borderColor='';if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);});
+dropZone.addEventListener('touchend',e=>{e.preventDefault();fileInput.click();});
+dropZone.addEventListener('dragenter',e=>{e.preventDefault();dropZone.style.borderColor='var(--accent)';});
+dropZone.addEventListener('dragover',e=>{e.preventDefault();e.stopPropagation();dropZone.style.borderColor='var(--accent)';});
+dropZone.addEventListener('dragleave',e=>{e.preventDefault();dropZone.style.borderColor='';});
+dropZone.addEventListener('drop',e=>{
+  e.preventDefault();e.stopPropagation();
+  dropZone.style.borderColor='';
+  const files=e.dataTransfer?e.dataTransfer.files:null;
+  if(files&&files[0])loadFile(files[0]);
+});
 fileInput.addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0]);});
 function loadFile(file){
   const reader=new FileReader();
@@ -779,6 +800,32 @@ function render(draft, draftSize){
     if(!draftSize)setStatus(`完了 ${outW}×${outH}px`);
   }
   nextChunk();
+}
+
+// ---- 保存 ----
+function saveImage(){
+  const oc=document.getElementById('offscreen');
+  if(!oc||oc.width===0){setStatus('先にレンダリングしてください');return;}
+  const isJpg=currentFmt==='jpg';
+  const q=parseInt(document.getElementById('jpgq').value)/100;
+  const mime=isJpg?'image/jpeg':'image/png';
+  const name='360toShape.'+(isJpg?'jpg':'png');
+  const url=oc.toDataURL(mime,isJpg?q:undefined);
+  const w=window.open('','_blank');
+  if(w){
+    w.document.write(`<html><head><title>${name}</title></head>
+<body style="margin:0;background:#111;display:flex;flex-direction:column;align-items:center;padding:20px;gap:14px;font-family:sans-serif;color:#fff;">
+<p style="font-size:13px;text-align:center;line-height:1.8;">
+  📱 iPhone: 画像を<strong>長押し</strong> → 「写真に追加」<br>
+  💻 PC: 画像を<strong>右クリック</strong> → 「名前を付けて保存」
+</p>
+<img src="${url}" style="max-width:100%;border-radius:8px;">
+</body></html>`);
+    w.document.close();
+    setStatus('新タブで画像を開きました');
+  } else {
+    setStatus('ポップアップをブロックしないでください');
+  }
 }
 
 pushHistory();
