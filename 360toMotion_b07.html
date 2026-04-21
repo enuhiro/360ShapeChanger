@@ -1141,7 +1141,7 @@ function prepareEq(){
   eqBuf=new Uint32Array(d.data.buffer);eqW32=sw;eqH32=sh;
 }
 function sampleEq(theta,phi){
-  let u=(theta/(2*Math.PI)+0.5)*eqW32,v=(0.5-phi/Math.PI)*eqH32;
+  let u=(-theta/(2*Math.PI)+0.5)*eqW32,v=(0.5-phi/Math.PI)*eqH32;
   u=((u%eqW32)+eqW32)%eqW32;v=Math.max(0,Math.min(eqH32-1.001,v));
   const xi=u|0,yi=v|0,fx=u-xi,fy=v-yi;
   const x1=xi+1>=eqW32?0:xi+1,y1=Math.min(yi+1,eqH32-1);
