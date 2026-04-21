@@ -2008,6 +2008,33 @@ document.getElementById('shading').addEventListener('input',function(){
   document.getElementById('shading_num').value=parseFloat(this.value).toFixed(2);
   if(srcCanvas)renderDebounced();
 });
-</script>
+// 🎯 指ドラッグ（ここから追加）
+let dragStart={},isDragging=false;
+document.getElementById('preview').addEventListener('pointerdown',startDrag);
+document.getElementById('preview').addEventListener('touchstart',startDrag,{passive:false});
+function startDrag(e){
+  e.preventDefault();
+  const pv=document.getElementById('preview');
+  dragStart.x=e.clientX||e.touches[0].clientX;
+  dragStart.y=e.clientY||e.touches[0].clientY;
+  dragStart.yaw=getVal('yaw',false);
+  dragStart.pitch=getVal('pitch',false);
+  isDragging=true;
+  pv.style.cursor='grabbing';
+}
+document.addEventListener('pointermove',drag);
+document.addEventListener('touchmove',drag,{passive:false});
+function drag(e){
+  if(!isDragging)return;
+  e.preventDefault();
+  const dx=(e.clientX||e.touches[0].clientX)-dragStart.x;
+  const dy=(e.clientY||e.touches[0].clientY)-dragStart.y;
+  setSN('yaw',dragStart.yaw+dx*0.5);
+  setSN('pitch',Math.max(-45,Math.min(45,dragStart.pitch-dy*0.5)));
+  renderDebounced();
+}
+document.addEventListener('pointerup',()=>isDragging=false);
+document.addEventListener('touchend',()=>isDragging=false);
+// 指ドラッグ（ここまで追加）</script>
 </body>
 </html>
