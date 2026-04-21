@@ -887,7 +887,7 @@ dropZone.addEventListener('dragover',e=>{e.preventDefault();e.stopPropagation();
 dropZone.addEventListener('dragleave',()=>{dropZone.classList.remove('dragover');});
 dropZone.addEventListener('drop',e=>{e.preventDefault();e.stopPropagation();dropZone.classList.remove('dragover');const f=e.dataTransfer?.files[0];if(f)loadFile(f);});
 fileInput.addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0]);});
-function loadFile(file){}
+function loadFile(file){
   const r=new FileReader();
   r.onload=ev=>{
     const img=new Image();
@@ -1141,7 +1141,7 @@ function prepareEq(){
   eqBuf=new Uint32Array(d.data.buffer);eqW32=sw;eqH32=sh;
 }
 function sampleEq(theta,phi){
-  let u=(-theta/(2*Math.PI)+0.5)*eqW32,v=(0.5-phi/Math.PI)*eqH32;
+  let u=(theta/(2*Math.PI)+0.5)*eqW32,v=(0.5-phi/Math.PI)*eqH32;
   u=((u%eqW32)+eqW32)%eqW32;v=Math.max(0,Math.min(eqH32-1.001,v));
   const xi=u|0,yi=v|0,fx=u-xi,fy=v-yi;
   const x1=xi+1>=eqW32?0:xi+1,y1=Math.min(yi+1,eqH32-1);
@@ -2008,46 +2008,6 @@ document.getElementById('shading').addEventListener('input',function(){
   document.getElementById('shading_num').value=parseFloat(this.value).toFixed(2);
   if(srcCanvas)renderDebounced();
 });
-// 🎯 指ドラッグ（ここから追加）
-// 🎯 指ドラッグ（重複削除後、ここに追加）
-let dragStartX=0, dragStartY=0, isDragging=false, lastX=0, lastY=0;
-const preview = document.getElementById('preview');
-
-preview.addEventListener('pointerdown', startDrag);
-preview.addEventListener('touchstart', startDrag, {passive: false});
-
-function startDrag(e) {
-  e.preventDefault();
-  lastX = e.clientX || e.touches[0].clientX;
-  lastY = e.clientY || e.touches[0].clientY;
-  dragStartX = getVal('yaw', false);
-  dragStartY = getVal('pitch', false);
-  isDragging = true;
-  preview.style.cursor = 'grabbing';
-}
-
-document.addEventListener('pointermove', dragMove);
-document.addEventListener('touchmove', dragMove, {passive: false});
-
-function dragMove(e) {
-  if (!isDragging) return;
-  e.preventDefault();
-  const clientX = e.clientX || e.touches[0].clientX;
-  const clientY = e.clientY || e.touches[0].clientY;
-  const dx = clientX - lastX;
-  const dy = clientY - lastY;
-  setSN('yaw', dragStartX + dx * 0.5);
-  setSN('pitch', Math.max(-45, Math.min(45, dragStartY - dy * 0.5)));
-  renderDebounced();
-  lastX = clientX;
-  lastY = clientY;
-}
-
-document.addEventListener('pointerup', () => { isDragging = false; preview.style.cursor = 'grab'; });
-document.addEventListener('touchend', () => { isDragging = false; preview.style.cursor = 'grab'; });
-// 指ドラッグ終わりfunction initDrag() {
-  const preview = document.getElementById('preview');
-  preview.style.cursor = 'grab';
-  preview.style.touchAction</script>
+</script>
 </body>
 </html>
