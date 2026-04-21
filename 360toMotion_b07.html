@@ -2009,32 +2009,42 @@ document.getElementById('shading').addEventListener('input',function(){
   if(srcCanvas)renderDebounced();
 });
 // 🎯 指ドラッグ（ここから追加）
-let dragStart={},isDragging=false;
-document.getElementById('preview').addEventListener('pointerdown',startDrag);
-document.getElementById('preview').addEventListener('touchstart',startDrag,{passive:false});
-function startDrag(e){
+// 🎯 指ドラッグ（重複削除後、ここに追加）
+let dragStartX=0, dragStartY=0, isDragging=false, lastX=0, lastY=0;
+const preview = document.getElementById('preview');
+
+preview.addEventListener('pointerdown', startDrag);
+preview.addEventListener('touchstart', startDrag, {passive: false});
+
+function startDrag(e) {
   e.preventDefault();
-  const pv=document.getElementById('preview');
-  dragStart.x=e.clientX||e.touches[0].clientX;
-  dragStart.y=e.clientY||e.touches[0].clientY;
-  dragStart.yaw=getVal('yaw',false);
-  dragStart.pitch=getVal('pitch',false);
-  isDragging=true;
-  pv.style.cursor='grabbing';
+  lastX = e.clientX || e.touches[0].clientX;
+  lastY = e.clientY || e.touches[0].clientY;
+  dragStartX = getVal('yaw', false);
+  dragStartY = getVal('pitch', false);
+  isDragging = true;
+  preview.style.cursor = 'grabbing';
 }
-document.addEventListener('pointermove',drag);
-document.addEventListener('touchmove',drag,{passive:false});
-function drag(e){
-  if(!isDragging)return;
+
+document.addEventListener('pointermove', dragMove);
+document.addEventListener('touchmove', dragMove, {passive: false});
+
+function dragMove(e) {
+  if (!isDragging) return;
   e.preventDefault();
-  const dx=(e.clientX||e.touches[0].clientX)-dragStart.x;
-  const dy=(e.clientY||e.touches[0].clientY)-dragStart.y;
-  setSN('yaw',dragStart.yaw+dx*0.5);
-  setSN('pitch',Math.max(-45,Math.min(45,dragStart.pitch-dy*0.5)));
+  const clientX = e.clientX || e.touches[0].clientX;
+  const clientY = e.clientY || e.touches[0].clientY;
+  const dx = clientX - lastX;
+  const dy = clientY - lastY;
+  setSN('yaw', dragStartX + dx * 0.5);
+  setSN('pitch', Math.max(-45, Math.min(45, dragStartY - dy * 0.5)));
   renderDebounced();
+  lastX = clientX;
+  lastY = clientY;
 }
-document.addEventListener('pointerup',()=>isDragging=false);
-document.addEventListener('touchend',()=>isDragging=false);
-// 指ドラッグ（ここまで追加）</script>
+
+document.addEventListener('pointerup', () => { isDragging = false; preview.style.cursor = 'grab'; });
+document.addEventListener('touchend', () => { isDragging = false; preview.style.cursor = 'grab'; });
+// 指ドラッグ終わり</script>
 </body>
 </html>
