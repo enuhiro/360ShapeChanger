@@ -11,10 +11,10 @@
   body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;
     height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;
     padding-bottom:env(safe-area-inset-bottom);}
-  header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-shrink:0;}
+  header{padding:5px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-shrink:0;}
   .logo{font-family:'Space Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;}
   .title{font-size:12px;color:var(--muted);font-weight:300;}
-  .credit{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);padding:3px 16px;text-align:center;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);}
+  .credit{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);padding:1px 16px;text-align:center;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);}
   .body{flex:1;min-height:0;display:flex;flex-direction:column;}
   @media (orientation:landscape){
     .body{flex-direction:row !important;height:100% !important;overflow:hidden !important;}
@@ -23,7 +23,7 @@
     .controls-scroll{flex:1 !important;overflow-y:auto !important;-webkit-overflow-scrolling:touch;}
     .action-panel{flex:0 0 20% !important;min-width:120px !important;overflow-y:auto !important;-webkit-overflow-scrolling:touch;}
   }
-  .canvas-area{flex:0 0 auto;width:100%;max-height:72vw;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:0;border-bottom:1px solid var(--border);}
+  .canvas-area{flex:0 0 auto;width:100%;max-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:0;border-bottom:1px solid var(--border);}
  canvas#preview{display:block;border-radius:6px;box-shadow:0 0 40px rgba(0,0,0,.8);touch-action:none;cursor:grab;user-select:none;width:auto;height:auto;max-width:100%;max-height:100%;}
   .placeholder{text-align:center;color:var(--muted);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;z-index:1;}
   .placeholder .big{font-size:48px;margin-bottom:8px;opacity:.25;}
@@ -104,11 +104,18 @@
   .accord-body{display:none;flex-direction:column;gap:6px;padding:8px 6px;border:1px solid var(--border);border-top:none;border-radius:0 0 5px 5px;}
   .accord-body.open{display:flex;}
 </style>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="360toMotion">
+  <meta name="mobile-web-app-capable" content="yes">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" onerror="window._jsZipFailed=true"></script>
 </head>
 <body>
 <header>
   <div class="logo">360toMotion</div>
-  <span style="font-family:'Space Mono',monospace;font-size:9px;color:#0a0a0f;background:var(--accent);border-radius:3px;padding:1px 5px;" style="display:none;">β09</span>
+  <span style="font-family:'Space Mono',monospace;font-size:9px;color:#0a0a0f;background:var(--accent);border-radius:3px;padding:1px 5px;" style="display:none;">β12</span>
+  <div style="flex:1;"></div>
+  <button id="xyShiftBtn" onclick="toggleXYShiftMode()" style="display:none;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-family:'Space Mono',monospace;font-size:9px;cursor:pointer;">↔ XYシフト</button>
 </header>
 <div class="credit">© 2026 えぬひろ (N_hiro) @h1r0k1_n | 改変・商用利用自由 | Built with Claude (Anthropic)</div>
 
@@ -156,7 +163,7 @@
       <!-- LP専用スライダー群 -->
       <div id="lpControls" style="display:none;flex-direction:column;gap:9px;">
         <div class="ctrl"><label>🔍 Zoom 拡大縮小</label>
-          <div class="ctrl-row"><input type="range" id="lp_zoom" min="0.5" max="9.5" step="0.05" value="3.0"><input class="num-input" id="lp_zoom_num" type="number" value="3.00"></div></div>
+          <div class="ctrl-row"><input type="range" id="lp_zoom" min="0.5" max="9.5" step="0.05" value="3.0" style="transform:scaleX(-1);"><input class="num-input" id="lp_zoom_num" type="number" value="3.00"></div></div>
         <div class="ctrl"><label>🔄 XY-rotate</label>
           <div class="ctrl-row"><input type="range" id="lp_xyrotate" min="-180" max="180" step="1" value="0" style="transform:scaleX(-1);"><input class="num-input" id="lp_xyrotate_num" type="number" value="0"></div></div>
         <div class="ctrl"><label>🔄 Rotate 回転</label>
@@ -441,7 +448,7 @@
       <button class="btn btn-secondary" id="seqBtn" onclick="startSeq()" disabled>🖼 連番画像を生成</button>
       <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
       <div class="seq-area" id="seqArea">
-        <button class="btn btn-secondary" onclick="openSeqFrames()">🔗 フレームを新タブで開く</button>
+        <button class="btn btn-secondary" onclick="openSeqFrames()">🔗 フレーム一覧を開く</button>
       </div>
     </div>
   </div>
@@ -476,6 +483,24 @@
 
 <script>
 'use strict';
+
+// ---- XYシフトモード（LP用）----
+let xyShiftMode=false;
+function toggleXYShiftMode(){
+  xyShiftMode=!xyShiftMode;
+  const btn=document.getElementById('xyShiftBtn');
+  if(btn){
+    btn.style.color=xyShiftMode?'var(--accent)':'var(--muted)';
+    btn.style.borderColor=xyShiftMode?'var(--accent)':'var(--border)';
+    btn.textContent=xyShiftMode?'↔ XYシフト ON':'↔ XYシフト';
+  }
+  // lp_xshift/lp_yshiftスライダーをXYシフトモード時のみ表示
+  const hw=document.getElementById('lp_xshiftWrap');
+  const vw=document.getElementById('lp_yshiftWrap');
+  if(hw)hw.style.display=xyShiftMode?'flex':'none';
+  if(vw)vw.style.display=xyShiftMode?'flex':'none';
+}
+
 document.addEventListener('dragover',e=>{e.preventDefault();document.body.style.outline='2px solid var(--accent)';});
 document.addEventListener('dragleave',e=>{if(!e.relatedTarget)document.body.style.outline='';});
 document.addEventListener('drop',e=>{e.preventDefault();document.body.style.outline='';const f=e.dataTransfer?.files[0];if(f)loadFile(f);});
@@ -527,6 +552,7 @@ function setShape(s){
     el.style.display=(isLP||isSphere)?'none':'flex';
   });
   // aperture・vshift・hshift・tilt・vtilt（LP時非表示）
+
   ['apertureWrap','vshiftWrap','hshiftWrap','tiltWrap','vtiltWrap','yawWrap','pitchWrap'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     el.style.display=isLP?'none':'flex';
@@ -546,7 +572,7 @@ function setShape(s){
   // pitch範囲
   const pitchEl=document.getElementById('pitch');
   if(pitchEl){
-    if(isSphere){pitchEl.min=-90;pitchEl.max=90;}
+    if(isSphere){pitchEl.min=-180;pitchEl.max=180;}
     else{pitchEl.min=-45;pitchEl.max=45;const cv=parseFloat(pitchEl.value);if(cv<-45)pitchEl.value=-45;if(cv>45)pitchEl.value=45;}
   }
   if(!isLP)document.getElementById('elevLabel').textContent=s==='cube'?'見下ろし角度':'見下ろし角度（↑で低く）';
@@ -593,6 +619,11 @@ function setShape(s){
   // LP→通常切替時にpitch/vtiltをリセット
   if(!isLP){const pe=document.getElementById('pitch');if(pe&&parseFloat(pe.value)!==0){pe.value=0;const pn=document.getElementById('pitch_num');if(pn)pn.value=0;}}
   syncCanvases();
+  // XYシフトボタンはLP時のみ表示
+  const xyBtn=document.getElementById('xyShiftBtn');
+  if(xyBtn)xyBtn.style.display=currentShape==='lp'?'block':'none';
+  // LP以外の時はXYシフトモードをリセット
+  if(currentShape!=='lp'){xyShiftMode=false;}
   applyShapeDefaults(true);
 }
 
@@ -796,11 +827,12 @@ function syncCanvases(){
   const oc=document.getElementById('offscreen');
   const ca=document.querySelector('.canvas-area');
   const[outW,outH]=getOutDims(512);
-  // LP含む全形状で同じサイズ設定
+  // pvのcanvasサイズを設定
   pv.width=outW;pv.height=outH;
   oc.width=outW;oc.height=outH;
+  // CSSのアスペクト比を合わせる
+  pv.style.aspectRatio=outW+'/'+outH;
   if(ca)ca.style.aspectRatio=outW+'/'+outH;
-  // gridCanvasもpvと同サイズに
   const gc=document.getElementById('gridCanvas');
   if(gc){gc.width=outW;gc.height=outH;}
 }
@@ -950,8 +982,8 @@ paramDefs.forEach(([sid,nid,mn,mx,isF])=>{
     if(sid==='res')updateRatioDisplay();
     if(srcCanvas&&VIEW_PARAMS.includes(sid)){
       if(isPlaying){stopPlay();setStatus('⚠️ スライダー操作のため再生を停止しました',4);}
-      renderStill(128);
-      clearTimeout(debTimer);debTimer=setTimeout(()=>renderStill(512),400);
+      renderStill(192);
+      clearTimeout(debTimer);debTimer=setTimeout(()=>renderStill(512),300);
     }
   });
   sl.addEventListener('change',()=>{pushHistory();if(srcCanvas&&VIEW_PARAMS.includes(sid))renderDebounced();});
@@ -986,7 +1018,7 @@ LP_PARAMS.forEach(([sid,nid,mn,mx,isF])=>{
   const sl=document.getElementById(sid),ni=document.getElementById(nid);if(!sl||!ni)return;
   sl.addEventListener('input',()=>{
     ni.value=isF?parseFloat(sl.value).toFixed(2):sl.value;
-    if(srcCanvas&&currentShape==='lp'){if(isPlaying){stopPlay();setStatus('⚠️ スライダー操作のため再生を停止しました',4);}renderStill(128);clearTimeout(debTimer);debTimer=setTimeout(()=>renderStill(512),400);}
+    if(srcCanvas&&currentShape==='lp'){if(isPlaying){stopPlay();setStatus('⚠️ スライダー操作のため再生を停止しました',4);}renderStill(192);clearTimeout(debTimer);debTimer=setTimeout(()=>renderStill(512),300);}
   });
   sl.addEventListener('change',()=>{if(srcCanvas&&currentShape==='lp'){pushHistory();renderDebounced();}});
   ni.addEventListener('blur',()=>{let v=isF?parseFloat(ni.value):parseInt(ni.value);if(isNaN(v))return;v=Math.max(mn,Math.min(mx,v));sl.value=v;ni.value=isF?v.toFixed(2):v;if(srcCanvas&&currentShape==='lp')renderDebounced();});
@@ -1105,7 +1137,7 @@ function getLPAnimParams(frameIdx,totalFrames){
   return{dyaw,dpitch,dzoom,dvflex,dradial,dxyrotate};
 }
 
-function renderDebounced(){clearTimeout(debTimer);debTimer=setTimeout(()=>renderStill(384),200);}
+function renderDebounced(){clearTimeout(debTimer);debTimer=setTimeout(()=>renderStill(512),200);}
 function resetAll(){
   Object.entries(DEFAULTS).forEach(([k,v])=>setSN(k,v,FLOATS.includes(k)));
   lpAnimZoom=false;lpAnimZoomCycle=0;
@@ -1336,7 +1368,7 @@ function renderStill(draftSize){
   const base=draftSize||512;
   const[outW,outH]=getOutDims(base);
   const oc=document.getElementById('offscreen');
-  oc.width=outW;oc.height=outH; // draftSizeに合わせて再設定
+  oc.width=outW;oc.height=outH;
   // LP形状は専用レンダラーを使用
   if(currentShape==='lp'){
     const oc=document.getElementById('offscreen');
@@ -1567,12 +1599,13 @@ function saveStill(){
   a.href=url;
   a.download='360toMotion_'+(Date.now())+'.'+( isJpg?'jpg':'png');
   document.body.appendChild(a);a.click();document.body.removeChild(a);
-  // 新タブにも表示（Safari用）
-  const w=window.open('','_blank');
-  if(w){
-    w.document.write('<html><head><title>静止画</title></head><body style="margin:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;"><p style="color:#aaa;font-family:sans-serif;font-size:13px;margin-bottom:12px;">📱 iPhone: 画像を長押し → 「写真に追加」 / PCはダウンロードされます</p><img src="'+url+'" style="max-width:100%;max-height:90vh;border-radius:6px;"></body></html>');
-    w.document.close();
-  }
+  // オーバーレイで表示（PWA対応）
+  let sov=document.getElementById('stillOverlay');
+  if(!sov){sov=document.createElement('div');sov.id='stillOverlay';document.body.appendChild(sov);}
+  sov.style.cssText='position:fixed;inset:0;background:#111;z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;';
+  sov.innerHTML='<div style="position:absolute;top:12px;right:12px;"><button onclick="document.getElementById(\'stillOverlay\').style.display=\'none\'" style="padding:6px 14px;border:1px solid #555;border-radius:6px;background:transparent;color:#aaa;font-size:12px;cursor:pointer;">✕ 閉じる</button></div>'
+    +'<p style="color:#aaa;font-family:sans-serif;font-size:12px;margin-bottom:12px;text-align:center;">📱 画像を長押し →「写真に追加」</p>'
+    +'<img src="'+url+'" style="max-width:100%;max-height:80vh;border-radius:6px;">';
   setStatus('静止画を保存しました');
 }
 
@@ -1644,11 +1677,13 @@ function saveCard(){
   ctx.fillText('Built with Claude (Anthropic)',24,CH-14);
 
   const url=cc.toDataURL('image/jpeg',0.92);
-  const w=window.open('','_blank');
-  if(w){
-    w.document.write(`<html><head><title>設定カード</title></head><body style="margin:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;"><p style="color:#aaa;font-family:sans-serif;font-size:13px;margin-bottom:12px;">📱 iPhone: 画像を長押し → 「写真に追加」</p><img src="${url}" style="max-width:100%;max-height:95vh;"></body></html>`);
-    w.document.close();setStatus('設定カードを開きました');
-  }
+  let cov=document.getElementById('cardOverlay');
+  if(!cov){cov=document.createElement('div');cov.id='cardOverlay';document.body.appendChild(cov);}
+  cov.style.cssText='position:fixed;inset:0;background:#111;z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;';
+  cov.innerHTML='<div style="position:absolute;top:12px;right:12px;"><button onclick="document.getElementById(\'cardOverlay\').style.display=\'none\'" style="padding:6px 14px;border:1px solid #555;border-radius:6px;background:transparent;color:#aaa;font-size:12px;cursor:pointer;">✕ 閉じる</button></div>'
+    +'<p style="color:#aaa;font-family:sans-serif;font-size:12px;margin-bottom:12px;">📱 画像を長押し→「写真に追加」</p>'
+    +'<img src="'+url+'" style="max-width:100%;max-height:80vh;">';
+  setStatus('設定カードを表示しました');
 }
 
 // ---- 再生 ----
@@ -1770,17 +1805,39 @@ function startSeq(){
 }
 function openSeqFrames(){
   if(!seqFrames.length)return;
-  const imgs=seqFrames.map((url,i)=>`<div style="text-align:center"><p style="color:#aaa;font-size:10px;margin-bottom:3px">frame_${String(i+1).padStart(3,'0')}</p><img src="${url}" style="max-width:140px;border-radius:4px;display:block;margin:0 auto"></div>`).join('');
-  const w=window.open('','_blank');
-  if(w){
-    w.document.write(`<html><head><title>Bounce Frames</title></head>
-<body style="margin:0;background:#111;padding:16px;font-family:sans-serif;color:#fff;">
-<p style="margin-bottom:4px;font-size:13px;font-weight:bold;">📱 iPhone: 各画像を長押し → 「写真に追加」</p>
-<p style="margin-bottom:14px;font-size:11px;color:#aaa;">全${seqFrames.length}枚 | CapCut等で動画化してください</p>
-<div style="display:flex;flex-wrap:wrap;gap:10px;">${imgs}</div>
-</body></html>`);
-    w.document.close();setStatus('新タブでフレーム一覧を開きました');
-  }
+  let ov=document.getElementById('seqOverlay');
+  if(!ov){ov=document.createElement('div');ov.id='seqOverlay';document.body.appendChild(ov);}
+  ov.style.cssText='position:fixed;inset:0;background:#111;z-index:2000;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px;display:block;';
+  const isJpg=document.getElementById('fmtJpg').classList.contains('active');
+  const ext=isJpg?'jpg':'png';
+  const imgs=seqFrames.map((url,i)=>`<div style="text-align:center"><p style="color:#aaa;font-size:10px;margin-bottom:3px">frame_${String(i+1).padStart(3,'0')}.${ext}</p><img src="${url}" style="max-width:140px;border-radius:4px;display:block;margin:0 auto"></div>`).join('');
+  ov.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;position:sticky;top:0;background:#111;padding:4px 0;z-index:1;">
+    <div style="font-size:13px;font-weight:bold;color:#fff;">📷 全${seqFrames.length}枚</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="saveAllAsZip()" style="padding:6px 12px;border:1px solid #c8f135;border-radius:6px;background:transparent;color:#c8f135;font-size:11px;cursor:pointer;">📦 ZIP保存</button>
+      <button onclick="document.getElementById('seqOverlay').style.display='none'" style="padding:6px 12px;border:1px solid #555;border-radius:6px;background:transparent;color:#aaa;font-size:11px;cursor:pointer;">✕ 閉じる</button>
+    </div></div>
+  <p style="color:#aaa;font-size:10px;margin-bottom:10px;">📱 各画像を長押し→「写真に追加」/ ZIP保存で一括ダウンロード</p>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;">${imgs}</div>`;
+  setStatus('フレーム一覧を表示しました');
+}
+
+async function saveAllAsZip(){
+  if(!seqFrames.length)return;
+  if(typeof JSZip==='undefined'){alert('ZIP保存にはオンライン環境が必要です。各画像を長押しして個別に保存してください');return;}
+  setStatus('ZIP作成中...');
+  const isJpg=document.getElementById('fmtJpg').classList.contains('active');
+  const ext=isJpg?'jpg':'png';
+  const zip=new JSZip();
+  seqFrames.forEach((url,i)=>{
+    zip.file('frame_'+String(i+1).padStart(3,'0')+'.'+ext,url.split(',')[1],{base64:true});
+  });
+  const blob=await zip.generateAsync({type:'blob'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='360toMotion_frames.zip';
+  a.click();
+  setStatus('ZIP保存完了');
 }
 
 // ---- ピンポン黄金比の状態更新 ----
@@ -1898,13 +1955,29 @@ function drawToPreview(srcCanvas){
   ctx.imageSmoothingEnabled=true;
   ctx.imageSmoothingQuality='medium';
   const sw=srcCanvas.width,sh=srcCanvas.height,dw=pv.width,dh=pv.height;
-  if(sw===sh){
+  // srcとdstが同サイズなら等倍描画（最も正確）
+  if(sw===dw&&sh===dh){
+    ctx.drawImage(srcCanvas,0,0);
+  } else if(sw===sh){
+    // 正方形srcをdst中央に配置
     const side=Math.min(dw,dh);
     const ox=Math.floor((dw-side)/2),oy=Math.floor((dh-side)/2);
     ctx.clearRect(0,0,dw,dh);
     ctx.drawImage(srcCanvas,ox,oy,side,side);
   } else {
-    ctx.drawImage(srcCanvas,0,0,dw,dh);
+    // srcのアスペクト比を保ってdstに収める
+    const srcRatio=sw/sh,dstRatio=dw/dh;
+    let dx=0,dy=0,drawW=dw,drawH=dh;
+    if(Math.abs(srcRatio-dstRatio)<0.01){
+      // ほぼ同じアスペクト比→そのまま
+      ctx.drawImage(srcCanvas,0,0,dw,dh);
+    } else {
+      // アスペクト比が違う→fit
+      if(srcRatio>dstRatio){drawH=dw/srcRatio;dy=Math.floor((dh-drawH)/2);}
+      else{drawW=dh*srcRatio;dx=Math.floor((dw-drawW)/2);}
+      ctx.clearRect(0,0,dw,dh);
+      ctx.drawImage(srcCanvas,dx,dy,drawW,drawH);
+    }
   }
   pv.style.visibility='visible';
   document.getElementById('placeholder').style.display='none';
@@ -1977,9 +2050,12 @@ function setHoldIn(v){holdIn=v;[0,4,8,16].forEach(x=>document.getElementById('ho
   const DEAD=12; // デッドゾーン（px）端から何px無視するか
 
   function getTouchParams(){
-    if(currentShape==='lp')
-      // 横→lp_yaw(ループ) 縦→lp_pitch(反転)
+    if(currentShape==='lp'){
+      // XYシフトモード時は1本指でhshift/vshift操作
+      if(xyShiftMode) return {h:'hshift',hF:true,hScale:0.02,hLoop:false,v:'vshift',vF:true,vScale:-0.02,vLoop:false};
+      // 通常は視点操作
       return {h:'lp_yaw',hF:false,hScale:0.6,hLoop:true, v:'lp_pitch',vF:false,vScale:-0.4,vLoop:true};
+    }
     if(currentShape==='sphere')
       return {h:'yaw',hF:false,hScale:-0.5,hLoop:true, v:'pitch',vF:false,vScale:-0.3,vLoop:true};
     if(currentShape==='cube')
@@ -2026,9 +2102,13 @@ function setHoldIn(v){holdIn=v;[0,4,8,16].forEach(x=>document.getElementById('ho
   function renderDrag(){
     if(!srcCanvas||!eqBuf)return;
     const pv2=document.getElementById('preview');
-    // dragOCをpvと同じサイズに（引き伸ばし防止）
-    const dW=pv2.width,dH=pv2.height;
+    const pvRect=pv2.getBoundingClientRect();
+    const cssW=Math.round(pvRect.width),cssH=Math.round(pvRect.height);
+// debug moved
+    // dragOCをCSS実サイズで作成（pvには等倍でなくCSS実サイズを使う）
     if(!dragOC)dragOC=document.createElement('canvas');
+    const dW=cssW||pv2.width;
+    const dH=cssH||pv2.height;
     dragOC.width=dW;dragOC.height=dH;
     if(currentShape==='lp'){
       renderStereoFast(dragOC);
@@ -2036,25 +2116,51 @@ function setHoldIn(v){holdIn=v;[0,4,8,16].forEach(x=>document.getElementById('ho
       const p2=getPhysicsParams(0,1);
       renderFrameSync(dragOC,p2);
     }
-    drawToPreview(dragOC);
+    // pvのCSSサイズをdragOCと同じに設定してから描画
+    // （ブラウザによるcanvas縮小表示での引き伸ばしを防ぐ）
+    pv2.style.width=dW+'px';
+    pv2.style.height=dH+'px';
+    const ctx=pv2.getContext('2d');
+    ctx.imageSmoothingEnabled=true;
+    ctx.imageSmoothingQuality='medium';
+    ctx.drawImage(dragOC,0,0,pv2.width,pv2.height);
+    pv2.style.visibility='visible';
+    document.getElementById('placeholder').style.display='none';
+    drawGrid();
   }
 
   function onMove(clientX,clientY){
     if(!dragging||!srcCanvas)return;
     const dx=clientX-lastX,dy=clientY-lastY;
     lastX=clientX;lastY=clientY;
-    const p=getTouchParams();
-    if(Math.abs(dx)>0.3){const el=document.getElementById(p.h);if(el)clampSlider(p.h,parseFloat(el.value)+dx*p.hScale,p.hF,p.hLoop);}
-    if(Math.abs(dy)>0.3){const el=document.getElementById(p.v);if(el)clampSlider(p.v,parseFloat(el.value)+dy*p.vScale,p.vF,p.vLoop);}
+    if(currentShape==='lp'&&xyShiftMode){
+      // XYシフトモード：lp_xshift/lp_yshiftを更新（renderStereoが参照）
+      if(Math.abs(dx)>0.3){
+        const el=document.getElementById('lp_xshift');
+        const ni=document.getElementById('lp_xshift_num');
+        if(el){const nv=Math.max(-1,Math.min(1,parseFloat(el.value)-dx*0.005));el.value=nv;if(ni)ni.value=nv.toFixed(2);}
+      }
+      if(Math.abs(dy)>0.3){
+        const el=document.getElementById('lp_yshift');
+        const ni=document.getElementById('lp_yshift_num');
+        if(el){const nv=Math.max(-1,Math.min(1,parseFloat(el.value)-dy*0.005));el.value=nv;if(ni)ni.value=nv.toFixed(2);}
+      }
+    } else {
+      const p=getTouchParams();
+      if(Math.abs(dx)>0.3){const el=document.getElementById(p.h);if(el)clampSlider(p.h,parseFloat(el.value)+dx*p.hScale,p.hF,p.hLoop);}
+      if(Math.abs(dy)>0.3){const el=document.getElementById(p.v);if(el)clampSlider(p.v,parseFloat(el.value)+dy*p.vScale,p.vF,p.vLoop);}
+    }
     clearTimeout(dragRenderTimer);
-    renderDrag();
-    dragRenderTimer=setTimeout(()=>{if(!dragging)renderStill(384);},400);
+    renderStill(currentShape==='octahedron'?128:192);
   }
 
   function onEnd(){
     dragging=false;
     clearTimeout(dragRenderTimer);
-    if(srcCanvas)renderStill(384);
+    // pvのCSSサイズをリセット（dragDrag中に変更した分を戻す）
+    const pvE=document.getElementById('preview');
+    pvE.style.width='';pvE.style.height='';
+    if(srcCanvas)renderStill(512);
   }
 
   // タッチ
@@ -2095,8 +2201,8 @@ function setHoldIn(v){holdIn=v;[0,4,8,16].forEach(x=>document.getElementById('ho
     const zoomId=currentShape==='lp'?'lp_zoom':'aperture';
     const isF=true;
     clampSlider(zoomId,parseFloat(document.getElementById(zoomId).value)+scale,isF,false);
-    renderStill(48);
-    clearTimeout(debTimer);debTimer=setTimeout(()=>renderStill(384),400);
+    renderStill(512);
+    clearTimeout(debTimer);debTimer=setTimeout(()=>renderStill(512),200);
   },{passive:false});
 
   // マウス
