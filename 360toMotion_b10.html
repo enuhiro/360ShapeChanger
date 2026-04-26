@@ -113,9 +113,9 @@
 <body>
 <header>
   <div class="logo">360toMotion</div>
-  <span style="font-family:'Space Mono',monospace;font-size:9px;color:#0a0a0f;background:var(--accent);border-radius:3px;padding:1px 5px;" style="display:none;">β12</span>
+  <span style="font-family:'Space Mono',monospace;font-size:9px;color:#0a0a0f;background:var(--accent);border-radius:3px;padding:1px 5px;" style="display:none;">β13</span>
   <div style="flex:1;"></div>
-  <button id="xyShiftBtn" onclick="toggleXYShiftMode()" style="display:none;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-family:'Space Mono',monospace;font-size:9px;cursor:pointer;">↔ XYシフト</button>
+  <button id="xyShiftBtn" onclick="toggleXYShiftMode()" style="display:block;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-family:'Space Mono',monospace;font-size:9px;cursor:pointer;">↔ XY</button>
 </header>
 <div class="credit">© 2026 えぬひろ (N_hiro) @h1r0k1_n | 改変・商用利用自由 | Built with Claude (Anthropic)</div>
 
@@ -170,11 +170,11 @@
           <div class="ctrl-row"><input type="range" id="lp_yaw" min="-180" max="180" step="1" value="0"><input class="num-input" id="lp_yaw_num" type="number" value="0"></div></div>
         <div class="ctrl"><label>↕️ Up Down 上下</label>
           <div class="ctrl-row"><input type="range" id="lp_pitch" min="-180" max="180" step="1" value="90"><input class="num-input" id="lp_pitch_num" type="number" value="90"></div></div>
-        <div class="ctrl"><label>↔️ Left Right 左右</label>
+        <div class="ctrl"><label>↔️ 左右シフト</label>
           <div class="ctrl-row"><input type="range" id="lp_roll" min="-180" max="180" step="1" value="0"><input class="num-input" id="lp_roll_num" type="number" value="0"></div></div>
-        <div class="ctrl"><label>➡️ X-shift</label>
+        <div class="ctrl" id="lp_xshiftWrap"><label>➡️ X-shift</label>
           <div class="ctrl-row"><input type="range" id="lp_xshift" min="-1" max="1" step="0.01" value="0" style="transform:scaleX(-1);"><input class="num-input" id="lp_xshift_num" type="number" value="0.00"></div></div>
-        <div class="ctrl"><label>⬆️ Y-shift</label>
+        <div class="ctrl" id="lp_yshiftWrap"><label>⬆️ Y-shift</label>
           <div class="ctrl-row"><input type="range" id="lp_yshift" min="-1" max="1" step="0.01" value="0"><input class="num-input" id="lp_yshift_num" type="number" value="0.00"></div></div>
         <div class="divider"></div>
 
@@ -449,6 +449,7 @@
       <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
       <div class="seq-area" id="seqArea">
         <button class="btn btn-secondary" onclick="openSeqFrames()">🔗 フレーム一覧を開く</button>
+        <button class="btn btn-secondary" onclick="saveAllAsZip()">📦 ZIP保存</button>
       </div>
     </div>
   </div>
@@ -486,17 +487,37 @@
 
 // ---- XYシフトモード（LP用）----
 let xyShiftMode=false;
+let xyAutoOffTimer=null;
+const XY_AUTO_OFF_SEC=5;
+
+function resetXYAutoOff(){
+  // XYシフトモード中のみタイマーを動かす
+  if(!xyShiftMode)return;
+  clearTimeout(xyAutoOffTimer);
+  xyAutoOffTimer=setTimeout(()=>{
+    if(xyShiftMode)toggleXYShiftMode();
+  },XY_AUTO_OFF_SEC*1000);
+}
+
 function toggleXYShiftMode(){
   xyShiftMode=!xyShiftMode;
   const btn=document.getElementById('xyShiftBtn');
   if(btn){
-    btn.style.color=xyShiftMode?'var(--accent)':'var(--muted)';
+    btn.style.color=xyShiftMode?'#0a0a0f':'var(--muted)';
+    btn.style.background=xyShiftMode?'var(--accent)':'transparent';
     btn.style.borderColor=xyShiftMode?'var(--accent)':'var(--border)';
-    btn.textContent=xyShiftMode?'↔ XYシフト ON':'↔ XYシフト';
+    btn.textContent=xyShiftMode?'↔ XY ON':'↔ XY';
   }
-  // lp_xshift/lp_yshiftスライダーをXYシフトモード時のみ表示
-  const hw=document.getElementById('lp_xshiftWrap');
-  const vw=document.getElementById('lp_yshiftWrap');
+  if(!xyShiftMode){
+    clearTimeout(xyAutoOffTimer); // OFF時はタイマー停止
+  }
+  // ON時はタイマーを開始しない（操作終了時=onEndで開始）
+  // 形状別にXYシフトスライダーを表示
+  const isLPnow=document.getElementById('shape_lp')?.classList.contains('active');
+  const hwId=isLPnow?'lp_xshiftWrap':'hshiftWrap';
+  const vwId=isLPnow?'lp_yshiftWrap':'vshiftWrap';
+  const hw=document.getElementById(hwId);
+  const vw=document.getElementById(vwId);
   if(hw)hw.style.display=xyShiftMode?'flex':'none';
   if(vw)vw.style.display=xyShiftMode?'flex':'none';
 }
@@ -621,9 +642,39 @@ function setShape(s){
   syncCanvases();
   // XYシフトボタンはLP時のみ表示
   const xyBtn=document.getElementById('xyShiftBtn');
-  if(xyBtn)xyBtn.style.display=currentShape==='lp'?'block':'none';
-  // LP以外の時はXYシフトモードをリセット
-  if(currentShape!=='lp'){xyShiftMode=false;}
+  if(xyBtn)xyBtn.style.display='block'; // 全形状で表示
+  // 形状切替時はXYシフトモードをリセット
+  xyShiftMode=false;
+  if(xyBtn){xyBtn.textContent='↔ XY';xyBtn.style.color='var(--muted)';xyBtn.style.background='transparent';xyBtn.style.borderColor='var(--border)';}
+  // 形状別にスライダーのラベルと順序を変更
+  const yawLabel=document.querySelector('#yawWrap label');
+  const vtiltLabel=document.querySelector('#vtiltWrap label');
+  const tiltLabel=document.querySelector('#tiltWrap label');
+  const ctrlParent=document.getElementById('yawWrap')&&document.getElementById('yawWrap').parentNode;
+  const yawW=document.getElementById('yawWrap');
+  const vtiltW=document.getElementById('vtiltWrap');
+  const tiltW=document.getElementById('tiltWrap');
+  if(currentShape==='sphere'){
+    // 球体：縦回転(vtilt)・横回転(yaw)を上部に
+    if(yawLabel)yawLabel.textContent='🔄 横回転';
+    if(vtiltLabel)vtiltLabel.textContent='↕️ 縦回転';
+    if(ctrlParent&&yawW&&vtiltW)ctrlParent.insertBefore(vtiltW,yawW);
+  } else if(currentShape==='cube'||currentShape==='cylinder'||currentShape==='octahedron'){
+    // キューブ等：縦回転(vtilt)・横回転(tilt)を上部に
+    if(tiltLabel)tiltLabel.textContent='🔄 横回転';
+    if(vtiltLabel)vtiltLabel.textContent='↕️ 縦回転';
+    if(ctrlParent&&yawW&&vtiltW)ctrlParent.insertBefore(vtiltW,yawW);
+    if(ctrlParent&&yawW&&tiltW)ctrlParent.insertBefore(tiltW,vtiltW.nextSibling);
+  } else {
+    // LP・その他：元のラベルと順序に戻す
+    if(yawLabel)yawLabel.textContent='🔄 Rotate 回転';
+    if(vtiltLabel)vtiltLabel.textContent='箱の垂直回転';
+    if(tiltLabel)tiltLabel.textContent='箱の水平回転';
+    // vtilt・tiltを元の位置（tiltWrapの後）に戻す
+    const elevW=document.getElementById('elevWrap');
+    if(ctrlParent&&tiltW&&elevW)ctrlParent.insertBefore(tiltW,elevW.nextSibling);
+    if(ctrlParent&&vtiltW&&tiltW)ctrlParent.insertBefore(vtiltW,tiltW.nextSibling);
+  }
   applyShapeDefaults(true);
 }
 
@@ -1805,28 +1856,29 @@ function startSeq(){
 }
 function openSeqFrames(){
   if(!seqFrames.length)return;
-  let ov=document.getElementById('seqOverlay');
-  if(!ov){ov=document.createElement('div');ov.id='seqOverlay';document.body.appendChild(ov);}
-  ov.style.cssText='position:fixed;inset:0;background:#111;z-index:2000;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px;display:block;';
-  const isJpg=document.getElementById('fmtJpg').classList.contains('active');
+  const isJpg=document.getElementById('fmt_jpg').classList.contains('active');
   const ext=isJpg?'jpg':'png';
   const imgs=seqFrames.map((url,i)=>`<div style="text-align:center"><p style="color:#aaa;font-size:10px;margin-bottom:3px">frame_${String(i+1).padStart(3,'0')}.${ext}</p><img src="${url}" style="max-width:140px;border-radius:4px;display:block;margin:0 auto"></div>`).join('');
-  ov.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;position:sticky;top:0;background:#111;padding:4px 0;z-index:1;">
-    <div style="font-size:13px;font-weight:bold;color:#fff;">📷 全${seqFrames.length}枚</div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="saveAllAsZip()" style="padding:6px 12px;border:1px solid #c8f135;border-radius:6px;background:transparent;color:#c8f135;font-size:11px;cursor:pointer;">📦 ZIP保存</button>
-      <button onclick="document.getElementById('seqOverlay').style.display='none'" style="padding:6px 12px;border:1px solid #555;border-radius:6px;background:transparent;color:#aaa;font-size:11px;cursor:pointer;">✕ 閉じる</button>
-    </div></div>
-  <p style="color:#aaa;font-size:10px;margin-bottom:10px;">📱 各画像を長押し→「写真に追加」/ ZIP保存で一括ダウンロード</p>
-  <div style="display:flex;flex-wrap:wrap;gap:10px;">${imgs}</div>`;
-  setStatus('フレーム一覧を表示しました');
+  const w=window.open('','_blank');
+  if(w){
+    w.document.write(`<html><head><title>360toMotion Frames</title></head>
+<body style="margin:0;background:#111;padding:16px;font-family:sans-serif;color:#fff;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;position:sticky;top:0;background:#111;padding:4px 0;">
+  <div style="font-size:13px;font-weight:bold;">📷 全${seqFrames.length}枚</div>
+</div>
+<p style="margin-bottom:14px;font-size:11px;color:#aaa;">📱 iPhone: 各画像を長押し → 「写真に追加」</p>
+<div style="display:flex;flex-wrap:wrap;gap:10px;">${imgs}</div>
+</body></html>`);
+    w.document.close();
+  }
+  setStatus('フレーム一覧を新タブで開きました');
 }
 
 async function saveAllAsZip(){
   if(!seqFrames.length)return;
   if(typeof JSZip==='undefined'){alert('ZIP保存にはオンライン環境が必要です。各画像を長押しして個別に保存してください');return;}
   setStatus('ZIP作成中...');
-  const isJpg=document.getElementById('fmtJpg').classList.contains('active');
+  const isJpg=document.getElementById('fmt_jpg').classList.contains('active');
   const ext=isJpg?'jpg':'png';
   const zip=new JSZip();
   seqFrames.forEach((url,i)=>{
@@ -2046,7 +2098,7 @@ function setHoldIn(v){holdIn=v;[0,4,8,16].forEach(x=>document.getElementById('ho
 // ---- タッチ操作 ----
 (function(){
   const pv=document.getElementById('preview');
-  let lastX=0,lastY=0,dragging=false;
+  let lastX=0,lastY=0,dragging=false,touchStartX=0,touchStartY=0;
   const DEAD=12; // デッドゾーン（px）端から何px無視するか
 
   function getTouchParams(){
@@ -2057,7 +2109,7 @@ function setHoldIn(v){holdIn=v;[0,4,8,16].forEach(x=>document.getElementById('ho
       return {h:'lp_yaw',hF:false,hScale:0.6,hLoop:true, v:'lp_pitch',vF:false,vScale:-0.4,vLoop:true};
     }
     if(currentShape==='sphere')
-      return {h:'yaw',hF:false,hScale:-0.5,hLoop:true, v:'pitch',vF:false,vScale:-0.3,vLoop:true};
+      return {h:'yaw',hF:false,hScale:-0.5,hLoop:true, v:'vtilt',vF:false,vScale:0.3,vLoop:true};
     if(currentShape==='cube')
       return {h:'tilt',hF:false,hScale:0.4,hLoop:true, v:'vtilt',vF:false,vScale:-0.3,vLoop:true};
     // cylinder/octahedron
@@ -2092,6 +2144,8 @@ function setHoldIn(v){holdIn=v;[0,4,8,16].forEach(x=>document.getElementById('ho
     if(!srcCanvas||isPlaying)return false; // 再生中は無効
     if(isInDeadZone(clientX,clientY))return false;
     lastX=clientX;lastY=clientY;dragging=true;
+    touchStartX=clientX;touchStartY=clientY;
+    if(xyShiftMode)clearTimeout(xyAutoOffTimer); // 操作中はタイマーキャンセル
     pushHistory();
     return true;
   }
@@ -2133,17 +2187,21 @@ function setHoldIn(v){holdIn=v;[0,4,8,16].forEach(x=>document.getElementById('ho
     if(!dragging||!srcCanvas)return;
     const dx=clientX-lastX,dy=clientY-lastY;
     lastX=clientX;lastY=clientY;
-    if(currentShape==='lp'&&xyShiftMode){
-      // XYシフトモード：lp_xshift/lp_yshiftを更新（renderStereoが参照）
+    if(xyShiftMode){
+      // XYシフトモード：形状別に対応するスライダーを更新
+      const hId=currentShape==='lp'?'lp_xshift':'hshift';
+      const vId=currentShape==='lp'?'lp_yshift':'vshift';
       if(Math.abs(dx)>0.3){
-        const el=document.getElementById('lp_xshift');
-        const ni=document.getElementById('lp_xshift_num');
-        if(el){const nv=Math.max(-1,Math.min(1,parseFloat(el.value)-dx*0.005));el.value=nv;if(ni)ni.value=nv.toFixed(2);}
+        const el=document.getElementById(hId);
+        const ni=document.getElementById(hId+'_num');
+        if(el){const nv=Math.max(parseFloat(el.min),Math.min(parseFloat(el.max),parseFloat(el.value)-dx*0.005));el.value=nv;if(ni)ni.value=nv.toFixed(2);}
       }
       if(Math.abs(dy)>0.3){
-        const el=document.getElementById('lp_yshift');
-        const ni=document.getElementById('lp_yshift_num');
-        if(el){const nv=Math.max(-1,Math.min(1,parseFloat(el.value)-dy*0.005));el.value=nv;if(ni)ni.value=nv.toFixed(2);}
+        const el=document.getElementById(vId);
+        const ni=document.getElementById(vId+'_num');
+        // LP: -dy（反転）、その他: +dy
+        const vScale=currentShape==='lp'?-0.005:0.005;
+        if(el){const nv=Math.max(parseFloat(el.min),Math.min(parseFloat(el.max),parseFloat(el.value)+dy*vScale));el.value=nv;if(ni)ni.value=nv.toFixed(2);}
       }
     } else {
       const p=getTouchParams();
@@ -2160,7 +2218,10 @@ function setHoldIn(v){holdIn=v;[0,4,8,16].forEach(x=>document.getElementById('ho
     // pvのCSSサイズをリセット（dragDrag中に変更した分を戻す）
     const pvE=document.getElementById('preview');
     pvE.style.width='';pvE.style.height='';
-    if(srcCanvas)renderStill(512);
+    // XYシフトモード中は軽い解像度で描画（重い512だと次タッチまでブロックされる）
+    if(srcCanvas)renderStill(xyShiftMode?192:512);
+    // XYシフトモード中はプレビュー操作後にタイマーリセット
+    if(xyShiftMode)resetXYAutoOff();
   }
 
   // タッチ
