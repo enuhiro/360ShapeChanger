@@ -396,8 +396,15 @@
         <div class="ctrl-row"><input type="range" id="ampB" min="0.05" max="0.5" value="0.2" step="0.05"><input class="num-input" id="ampB_num" type="number" value="0.20"></div></div>
       <div class="ctrl"><label>プレビュー解像度</label>
         <div class="ctrl-row"><input type="range" id="res" min="256" max="1024" value="512" step="128"><input class="num-input" id="res_num" type="number" value="512"></div></div>
-      <div class="ctrl"><label>出力解像度（連番）</label>
-        <div class="ctrl-row"><input type="range" id="outres" min="512" max="4096" value="1024" step="256"><input class="num-input" id="outres_num" type="number" value="1024"></div></div>
+      <div class="ctrl" id="outresWrap"><label>出力解像度（連番）</label>
+        <div class="mode-btns" style="grid-template-columns:repeat(3,1fr);gap:4px;">
+          <button class="mode-btn" id="outres_512"  onclick="setOutres(512)">512<br><span style="font-size:8px;opacity:0.7">軽め</span></button>
+          <button class="mode-btn active" id="outres_1080" onclick="setOutres(1080)">1080<br><span style="font-size:8px;opacity:0.7">SNS向け</span></button>
+          <button class="mode-btn" id="outres_2048" onclick="setOutres(2048)">2048<br><span style="font-size:8px;opacity:0.7">印刷向け</span></button>
+        </div>
+        <input type="hidden" id="outres" value="1080">
+        <input type="hidden" id="outres_num" value="1080">
+      </div>
 
       <div class="divider"></div>
       <div class="section-title">📏 アスペクト比</div>
@@ -408,7 +415,6 @@
         <button class="ratio-btn"        id="ratio_16_9" onclick="setRatio('16:9')">16:9</button>
       </div>
       <div class="orient-row">
-        <button class="flip-btn" id="orientBtn" onclick="flipOrientation()">🔄 横向き</button>
         <span class="ratio-info" id="ratioDisplay">512 × 512</span>
       </div>
 
@@ -541,7 +547,7 @@ let fsDuration=60;
 const FLOATS=['hr','wr','diagr','aperture','vshift','hshift','lp_zoom','lp_vflex','lp_hflex','lp_radial','lp_ev','lp_eh','lp_wamp','lp_xshift','lp_yshift'];
 const DEFAULTS={yaw:0,pitch:0,elev:30,tilt:45,vtilt:0,vshift:0,hshift:0,hr:1.00,wr:1.00,diagr:0,aperture:0.80};
 const RATIOS={'1:1':[1,1],'3:2':[3,2],'4:3':[4,3],'16:9':[16,9]};
-let currentRatio='1:1', isLandscape=true;
+let currentRatio='1:1', isLandscape=false;
 
 const SHAPE_DEFAULTS={
   cube:       {yaw:0,pitch:0,elev:30,tilt:45,vtilt:0, vshift:0,hshift:0,hr:1.00,wr:1.00,diagr:0,aperture:0.80},
@@ -882,6 +888,16 @@ function getOutDims(base){
   return isLandscape?[Math.round(base*lr),base]:[base,Math.round(base*lr)];
 }
 // ============ キャンバスサイズ管理（唯一の変更場所） ============
+
+function setOutres(v){
+  document.getElementById('outres').value=v;
+  document.getElementById('outres_num').value=v;
+  [512,1080,2048].forEach(x=>{
+    const btn=document.getElementById('outres_'+x);
+    if(btn)btn.classList.toggle('active',x===v);
+  });
+}
+
 function syncCanvases(){
   const pv=document.getElementById('preview');
   const oc=document.getElementById('offscreen');
@@ -906,21 +922,25 @@ function updateRatioDisplay(){
 
 // ---- アスペクト比 ----
 function setRatio(r){
-  currentRatio=r;
+  if(currentRatio===r&&r!=='1:1'){
+    // 同じratioを再タップ→縦横ループ
+    isLandscape=!isLandscape;
+  } else {
+    currentRatio=r;
+    if(r!=='1:1') isLandscape=false; // 新ratio選択時は縦向きデフォルト
+  }
   document.querySelectorAll('.ratio-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('ratio_'+r.replace(':','_')).classList.add('active');
   const is1=r==='1:1';
-  const ob=document.getElementById('orientBtn');
-  ob.style.opacity=is1?'0.3':'1';ob.style.pointerEvents=is1?'none':'auto';
   updateRatioDisplay();
   syncCanvases();
   if(isPlaying){stopPlay();setStatus('⚠️ アスペクト比を変更したため再生を停止しました',5);}
   if(srcCanvas)renderDebounced();
 }
-function flipOrientation(){
+function cycleRatioOrientation(){
   if(currentRatio==='1:1')return;
   isLandscape=!isLandscape;
-  document.getElementById('orientBtn').textContent=isLandscape?'🔄 横向き':'🔄 縦向き';
+
   updateRatioDisplay();
   syncCanvases();
   if(isPlaying){stopPlay();setStatus('⚠️ アスペクト比を変更したため再生を停止しました',5);}
@@ -2141,7 +2161,7 @@ function setHoldIn(v){holdIn=v;[0,4,8,16].forEach(x=>document.getElementById('ho
       // XYシフトモード時は1本指でhshift/vshift操作
       if(xyShiftMode) return {h:'hshift',hF:true,hScale:0.02,hLoop:false,v:'vshift',vF:true,vScale:-0.02,vLoop:false};
       // 通常は視点操作
-      return {h:'lp_yaw',hF:false,hScale:0.6,hLoop:true, v:'lp_pitch',vF:false,vScale:0.4,vLoop:true};
+      return {h:'lp_yaw',hF:false,hScale:-0.6,hLoop:true, v:'lp_pitch',vF:false,vScale:0.4,vLoop:true};
     }
     if(currentShape==='sphere')
       return {h:'yaw',hF:false,hScale:-0.5,hLoop:true, v:'vtilt',vF:false,vScale:0.3,vLoop:true};
