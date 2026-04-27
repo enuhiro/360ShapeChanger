@@ -2317,8 +2317,9 @@ function setHoldIn(v){holdIn=v;[0,4,8,16].forEach(x=>document.getElementById('ho
     const zoomId=currentShape==='lp'?'lp_zoom':'aperture';
     const isF=true;
     clampSlider(zoomId,parseFloat(document.getElementById(zoomId).value)+scale,isF,false);
-    renderStill(512);
-    clearTimeout(debTimer);debTimer=setTimeout(()=>renderStill(512),200);
+    // ピンチ中は軽い解像度・離した後に高解像度
+    renderStill(currentShape==='octahedron'?128:192);
+    clearTimeout(debTimer);debTimer=setTimeout(()=>renderStill(512),300);
   },{passive:false});
 
   // マウス
