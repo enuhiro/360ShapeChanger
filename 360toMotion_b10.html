@@ -1677,13 +1677,17 @@ function renderStereo(outCanvas,animParams){
 
 // ---- LP高速レンダラー（再生用・低解像度） ----
 function renderStereoFast(outCanvas,animParams){
-  // outCanvasは正方形前提（startPlayでLP時に正方形設定済み）
+  // tmpをoutCanvasと同じアスペクト比で作成（引き伸ばし防止）
   const S=192;
-  const tmp=document.createElement('canvas');tmp.width=S;tmp.height=S;
+  const ow=outCanvas.width,oh=outCanvas.height;
+  const ratio=ow/oh;
+  const tw=ratio>=1?Math.round(S*ratio):S;
+  const th=ratio>=1?S:Math.round(S/ratio);
+  const tmp=document.createElement('canvas');tmp.width=tw;tmp.height=th;
   renderStereo(tmp,animParams);
   const ctx=outCanvas.getContext('2d');
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='medium';
-  ctx.drawImage(tmp,0,0,outCanvas.width,outCanvas.height);
+  ctx.drawImage(tmp,0,0,ow,oh);
 }
 
 // ---- 静止画保存 ----
